@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0b0f1a" />
+    <title>Masonic MM Education</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap');
+      :root {
+        --mm-indigo: #1b2440;
+        --mm-black: #0b0f1a;
+        --mm-silver: #c0c7d1;
+        --mm-gold: #c8a24a;
+      }
+      body {
+        font-family: 'Cormorant Garamond', serif;
+        background: radial-gradient(circle at 20% 10%, #1f2a44 0%, #0b0f1a 45%, #050608 100%);
+        color: white;
+        overflow: hidden;
+        touch-action: none; 
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .mm-display { font-family: 'Cinzel', serif; letter-spacing: 0.08em; }
+      .mm-glow { text-shadow: 0 0 18px rgba(200, 162, 74, 0.25); }
+      .mm-fade-in { animation: mm-fade-in 1.2s ease both; }
+      @keyframes mm-fade-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #1e293b; }
+      ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+      .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "pg": "https://esm.sh/pg@8.11.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.88.0"
+  }
+}
+</script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
