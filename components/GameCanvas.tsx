@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { GameState, Player, Orb, Platform, Question, Enemy } from '../types';
+import { GameState, Player, Orb, Platform, Question } from '../types';
 import {
   GRAVITY,
   FRICTION,
@@ -18,7 +18,7 @@ import {
   QUESTIONS,
   REVIEW_QUESTIONS,
   REQUIRED_TOOL_IDS,
-  ENEMY_DATA
+  NPC_CONFIG
 } from '../constants';
 import { generateSpriteUrl } from '../utils/assetGenerator';
 import QuizModal from './QuizModal';
@@ -33,15 +33,14 @@ type GameCanvasProps = {
   isGrandOfficer?: boolean | null;
 };
 
-type EnemyState = Enemy & {
-  dir: 1 | -1;
-  width: number;
-  height: number;
-};
-
-const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
+const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiationDate, isGrandOfficer }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
+  const userNameRef = useRef<string | null>(userName ?? null);
+  const rankRef = useRef<string | null>(rank ?? null);
+  const initiationDateRef = useRef<string | null>(initiationDate ?? null);
+  const isGrandOfficerRef = useRef<boolean | null>(isGrandOfficer ?? null);
+  const innerGuardGreetedRef = useRef(false);
 
   const [dimensions, setDimensions] = useState({
     w: typeof window !== 'undefined' ? (window.innerWidth || 800) : 800,
@@ -58,6 +57,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
   const [score, setScore] = useState(0);
   const [collectedIds, setCollectedIds] = useState<Set<number>>(new Set());
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  const [playerName, setPlayerName] = useState(userName ?? '');
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [tempName, setTempName] = useState(userName ?? '');
+  const [hasApron, setHasApron] = useState(false);
+  const [isRestored, setIsRestored] = useState(false);
 
   const scoreRef = useRef(0);
   const collectedRef = useRef<Set<number>>(new Set());
@@ -68,7 +72,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
   const cameraRef = useRef({ x: 0, y: 0 });
   const spritesRef = useRef<Record<string, HTMLImageElement>>({});
   const platformsRef = useRef<Platform[]>([]);
-  const enemiesRef = useRef<EnemyState[]>([]);
   const boundsRef = useRef({ minY: -200, maxY: 200 });
 
   const playerRef = useRef<Player>({
@@ -83,6 +86,24 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
     jumpCount: 0,
     coyoteTimer: 0
   });
+
+  useEffect(() => {
+    if (userName) {
+      userNameRef.current = userName;
+      setPlayerName(userName);
+      setTempName(userName);
+      setShowNameInput(false);
+    }
+    if (rank) {
+      rankRef.current = rank;
+    }
+    if (initiationDate) {
+      initiationDateRef.current = initiationDate;
+    }
+    if (typeof isGrandOfficer === 'boolean') {
+      isGrandOfficerRef.current = isGrandOfficer;
+    }
+  }, [userName, rank, initiationDate, isGrandOfficer]);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -120,31 +141,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
     boundsRef.current = { minY, maxY };
   }, []);
 
-  const initializeEnemies = () => {
-    const groundRefY = DESIGN_HEIGHT - 40;
-    enemiesRef.current = ENEMY_DATA.map((e) => ({
-      x: e.x,
-      y: groundRefY + e.yOffset - 44,
-      minX: e.minX,
-      maxX: e.maxX,
-      speed: e.speed,
-      type: e.type,
-      dir: 1,
-      width: 32,
-      height: 44
-    }));
-  };
-
-  useEffect(() => {
-    initializeEnemies();
-  }, []);
-
   useEffect(() => {
     const keys = [
-      'player',
-      'jubela',
-      'jubelo',
-      'jubelum',
       'skirret',
       'pencil',
       'compasses',
@@ -154,7 +152,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
       'scythe',
       'dormer_window',
       'porch',
-      'chair'
+      'chair',
+      'inner_guard',
+      'senior_warden',
+      'wm'
     ];
 
     keys.forEach((key) => {
@@ -175,6 +176,184 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
     return selection;
   };
 
+  const drawPlayerSprite = (ctx: CanvasRenderingContext2D, p: Player, showApron: boolean, restored: boolean) => {
+    ctx.save();
+    ctx.translate(p.x + p.width / 2, p.y + p.height / 2);
+    ctx.scale(p.facing, 1);
+
+    const baseWalkSpeed = 120;
+    const velocityFactor = Math.min(Math.abs(p.vx) / 5.5, 1.5);
+    const walkSpeed = baseWalkSpeed / Math.max(velocityFactor, 0.5);
+    const isMoving = Math.abs(p.vx) > 0.1;
+    const walkCycle = Date.now() / walkSpeed;
+
+    const legAmplitude = 4 + velocityFactor * 2;
+    let leftLegOffset = 0;
+    let rightLegOffset = 0;
+    let bodyBob = 0;
+
+    if (!p.isGrounded) {
+      leftLegOffset = -4;
+      rightLegOffset = 5;
+    } else if (isMoving) {
+      leftLegOffset = Math.sin(walkCycle) * legAmplitude;
+      rightLegOffset = Math.sin(walkCycle + Math.PI) * legAmplitude;
+      bodyBob = Math.abs(Math.sin(walkCycle * 2)) * 1.5;
+    }
+
+    ctx.translate(0, -bodyBob);
+
+    ctx.fillStyle = '#fca5a5';
+    ctx.beginPath();
+    ctx.arc(0, -16, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.moveTo(7, -20);
+    ctx.bezierCurveTo(4, -27, -9, -27, -10, -20);
+    ctx.lineTo(-10, -9);
+    ctx.lineTo(-3, -9);
+    ctx.lineTo(-3, -14);
+    ctx.lineTo(7, -20);
+    ctx.fill();
+
+    if (!restored) {
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(2, -19, 6, 5);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(2, -19, 6, 5);
+      ctx.beginPath();
+      ctx.moveTo(2, -17);
+      ctx.lineTo(-7, -17);
+      ctx.stroke();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-7, -10, 14, 20);
+
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(0, -8, 6, 6);
+
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(-9 + (isMoving ? leftLegOffset * 0.5 : 0), -8, 3, 14);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(6 + (isMoving ? rightLegOffset * 0.5 : 0), -8, 3, 14);
+
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(-9 + (isMoving ? leftLegOffset * 0.5 : 0), 6, 3, 3);
+      ctx.fillRect(6 + (isMoving ? rightLegOffset * 0.5 : 0), 6, 3, 3);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-6 + leftLegOffset, 10, 5, 12);
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(-6 + leftLegOffset, 14, 5, 4);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(1 + rightLegOffset, 10, 5, 12);
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(-6 + leftLegOffset, 22, 4, 3);
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(-2 + leftLegOffset, 22, 3, 3);
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(1 + rightLegOffset, 22, 7, 3);
+
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-4, -11);
+      ctx.quadraticCurveTo(0, -7, 4, -11);
+      ctx.stroke();
+
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath();
+      ctx.arc(3, -9, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(3, -9);
+      const ropeSwing = isMoving ? Math.sin(walkCycle) * 3 : 0;
+      ctx.quadraticCurveTo(6, -2, 5 + ropeSwing, 8);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(4, -17, 2, 2);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-7, -10, 14, 20);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(-4, -10);
+      ctx.lineTo(4, -10);
+      ctx.lineTo(0, 0);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.moveTo(-1, -10);
+      ctx.lineTo(1, -10);
+      ctx.lineTo(0.5, -2);
+      ctx.lineTo(-0.5, -2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-6 + leftLegOffset, 10, 5, 12);
+      ctx.fillRect(1 + rightLegOffset, 10, 5, 12);
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(-6 + leftLegOffset, 22, 7, 3);
+      ctx.fillRect(1 + rightLegOffset, 22, 7, 3);
+
+      ctx.fillStyle = '#0f172a';
+      const armAmplitude = 3 + velocityFactor * 1.5;
+      const leftArmSwing = isMoving ? Math.sin(walkCycle + Math.PI) * armAmplitude : 0;
+      const rightArmSwing = isMoving ? Math.sin(walkCycle) * armAmplitude : 0;
+
+      ctx.fillRect(-9 + leftArmSwing, -8, 3, 14);
+      ctx.fillRect(6 + rightArmSwing, -8, 3, 14);
+
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(-9 + leftArmSwing, 6, 3, 3);
+      ctx.fillRect(6 + rightArmSwing, 6, 3, 3);
+    }
+
+    if (showApron && restored) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+      ctx.fillRect(-7, 0, 14, 10);
+      ctx.strokeRect(-7, 0, 14, 10);
+
+      ctx.beginPath();
+      ctx.moveTo(-7, 0);
+      ctx.lineTo(7, 0);
+      ctx.lineTo(0, 6);
+      ctx.closePath();
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#7dd3fc';
+      ctx.beginPath();
+      ctx.arc(-4, 7, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(4, 7, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 2, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  };
+
   const resetPlayer = (x: number, y: number) => {
     const p = playerRef.current;
     p.x = x;
@@ -191,6 +370,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
     resetPlayer(60, groundRefY - 100);
     cameraRef.current = { x: 0, y: 0 };
     lastCheckpointRef.current = { x: 60, y: groundRefY - 100 };
+    innerGuardGreetedRef.current = false;
     collectedRef.current = new Set();
     seenLoreRef.current = new Set();
     setCollectedIds(new Set());
@@ -202,7 +382,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
     setGraveResult(null);
     setWarningMessage(null);
     setModalState('NONE');
-    initializeEnemies();
+    setHasApron(false);
+    setIsRestored(false);
+    setShowNameInput(false);
     setGameState(toMenu ? 'START' : 'PLAYING');
   };
 
@@ -246,6 +428,14 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
       return;
     }
 
+    if (activeOrb.id === 999) {
+      setHasApron(true);
+      setIsRestored(true);
+      setActiveOrb(null);
+      setModalState('NONE');
+      return;
+    }
+
     seenLoreRef.current.add(activeOrb.spriteKey);
 
     if (activeOrb.questionId) {
@@ -269,6 +459,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
     setActiveOrb(null);
     setModalState('NONE');
     setWarningMessage('Fidelity falters. The tool remains in shadow.');
+  };
+
+  const handleNameSubmit = () => {
+    if (tempName.trim()) {
+      setPlayerName(tempName.trim());
+      setShowNameInput(false);
+    }
   };
 
   useEffect(() => {
@@ -466,6 +663,76 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
       }
       if (jumpBufferRef.current > 0) jumpBufferRef.current -= 1;
 
+      // --- NPC INTERACTIONS ---
+      const igX = NPC_CONFIG.INNER_GUARD.x;
+      const resolvedName = userNameRef.current || playerName;
+      const resolvedRank = rankRef.current;
+      const resolvedInitiationDate = initiationDateRef.current;
+      const resolvedIsGrandOfficer = isGrandOfficerRef.current;
+      const hasIdentityDetails = Boolean(resolvedName && resolvedRank && resolvedInitiationDate);
+
+      if (hasIdentityDetails) {
+        if (!innerGuardGreetedRef.current && player.x > igX - 50) {
+          innerGuardGreetedRef.current = true;
+          player.vx = 0;
+          keysRef.current = {};
+
+          let response = `Whom have you there? Brother ${resolvedRank} ${resolvedName}, who was initiated on ${resolvedInitiationDate}. The Senior Warden awaits to invest you with the badge of a Master Mason.`;
+          if (resolvedIsGrandOfficer === true) {
+            response = `Whom have you there? A Grand Lodge Officer! I am honoured to admit you, ${resolvedName}. The Senior Warden awaits to invest you.`;
+          } else if (resolvedIsGrandOfficer === false) {
+            response = 'Whom have you there? You seek advancement in Freemasonry. The Senior Warden awaits to invest you with the badge of a Master Mason.';
+          }
+
+          const innerGuardOrbMock: Orb = {
+            id: 997,
+            x: 0,
+            y: 0,
+            radius: 0,
+            active: true,
+            name: 'Inner Guard',
+            spriteKey: 'inner_guard',
+            blurb: response
+          };
+
+          setActiveOrb(innerGuardOrbMock);
+          setModalState('LORE');
+          return;
+        }
+      } else {
+        if (player.x > igX - 50) {
+          player.x = igX - 50;
+          player.vx = 0;
+          keysRef.current = {};
+          setShowNameInput(true);
+        }
+      }
+
+      const swX = NPC_CONFIG.SENIOR_WARDEN.x;
+      const swY = groundRefY + NPC_CONFIG.SENIOR_WARDEN.yOffset;
+      if (!hasApron && innerGuardGreetedRef.current) {
+        if (player.x > swX - 30) {
+          player.x = swX - 30;
+          player.vx = 0;
+          keysRef.current = {};
+
+          const swOrbMock: Orb = {
+            id: 999,
+            x: 0,
+            y: 0,
+            radius: 0,
+            active: true,
+            name: 'Senior Warden',
+            spriteKey: 'senior_warden',
+            blurb: 'Brother, I invest you with the badge of a Master Mason. Wear it with honour and constancy, that it may adorn a life of fidelity.'
+          };
+
+          setActiveOrb(swOrbMock);
+          setModalState('LORE');
+          return;
+        }
+      }
+
       for (const orb of orbs) {
         if (!orb.active) continue;
         const dx = player.x + player.width / 2 - orb.x;
@@ -495,41 +762,20 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
         }
       }
 
-      for (const enemy of enemiesRef.current) {
-        enemy.x += enemy.speed * enemy.dir;
-        if (enemy.x < enemy.minX) {
-          enemy.x = enemy.minX;
-          enemy.dir = 1;
-        }
-        if (enemy.x > enemy.maxX) {
-          enemy.x = enemy.maxX;
-          enemy.dir = -1;
-        }
-
-        if (
-          player.x < enemy.x + enemy.width &&
-          player.x + player.width > enemy.x &&
-          player.y < enemy.y + enemy.height &&
-          player.y + player.height > enemy.y
-        ) {
-          handleDeath();
-          return;
-        }
-      }
-
-      const nearGoal = Math.abs(player.x - GOAL_X) < 40;
-      const goalY = groundRefY + GOAL_Y_OFFSET;
-      const nearGoalY = Math.abs(player.y - goalY) < 80;
+      const wmX = NPC_CONFIG.WORSHIPFUL_MASTER.x;
+      const wmY = groundRefY + NPC_CONFIG.WORSHIPFUL_MASTER.yOffset;
+      const nearGoal = Math.abs(player.x - wmX) < 40;
+      const nearGoalY = Math.abs((player.y + player.height) - wmY) < 60;
       if (nearGoal && nearGoalY) {
         const hasTools = REQUIRED_TOOL_IDS.every((id) => collectedRef.current.has(id));
         if (hasTools) {
-          const name = userName?.trim() || 'Mason';
+          const name = playerName.trim() || 'Mason';
           submitLeaderboardScore(name, scoreRef.current + 500, true, userId).catch(() => {});
           setGameState('VICTORY');
           return;
         }
         if (!warningMessage) {
-          setWarningMessage('The East is sealed. Recover the working tools first.');
+          setWarningMessage('Worshipful Master: "The East is sealed. Recover the working tools first."');
         }
       }
 
@@ -628,32 +874,19 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
         }
       });
 
-      enemiesRef.current.forEach((enemy) => {
-        const key = enemy.type === 'Jubela' ? 'jubela' : enemy.type === 'Jubelo' ? 'jubelo' : 'jubelum';
+      const drawNpc = (key: string, x: number, y: number) => {
         const img = spritesRef.current[key];
         if (img && img.complete) {
-          ctx.save();
-          ctx.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height);
-          if (enemy.dir === -1) ctx.scale(-1, 1);
-          ctx.drawImage(img, -enemy.width / 2, -enemy.height, enemy.width, enemy.height);
-          ctx.restore();
+          ctx.drawImage(img, x - 16, y - 44, 32, 44);
         } else {
           ctx.fillStyle = '#11131a';
-          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+          ctx.fillRect(x - 12, y - 40, 24, 40);
         }
-      });
+      };
 
-      const playerImg = spritesRef.current['player'];
-      if (playerImg && playerImg.complete) {
-        ctx.save();
-        ctx.translate(player.x + player.width / 2, player.y + player.height);
-        if (player.facing === -1) ctx.scale(-1, 1);
-        ctx.drawImage(playerImg, -player.width / 2, -player.height, player.width, player.height);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-      }
+      drawNpc('inner_guard', igX, groundRefY + NPC_CONFIG.INNER_GUARD.yOffset);
+      drawNpc('senior_warden', swX, swY);
+      drawNpc('wm', wmX, wmY);
 
       const chairImg = spritesRef.current['chair'];
       if (chairImg && chairImg.complete) {
@@ -662,14 +895,14 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
 
       ctx.save();
       ctx.globalCompositeOperation = 'multiply';
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
       ctx.fillRect(cameraRef.current.x, cameraRef.current.y, viewW, viewH);
 
       ctx.globalCompositeOperation = 'destination-out';
       const drawLight = (x: number, y: number, radius: number) => {
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
         gradient.addColorStop(0, 'rgba(0,0,0,1)');
-        gradient.addColorStop(0.6, 'rgba(0,0,0,0.6)');
+        gradient.addColorStop(0.55, 'rgba(0,0,0,0.18)');
         gradient.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -684,6 +917,21 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
 
       ctx.restore();
 
+      const playerAuraX = player.x + player.width / 2;
+      const playerAuraY = player.y + player.height / 2;
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const aura = ctx.createRadialGradient(playerAuraX, playerAuraY, 0, playerAuraX, playerAuraY, 28);
+      aura.addColorStop(0, 'rgba(230,200,110,0.7)');
+      aura.addColorStop(1, 'rgba(230,200,110,0)');
+      ctx.fillStyle = aura;
+      ctx.beginPath();
+      ctx.arc(playerAuraX, playerAuraY, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      drawPlayerSprite(ctx, player, hasApron, isRestored);
+
       ctx.restore();
 
       frameId = requestAnimationFrame(loop);
@@ -694,7 +942,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [gameState, modalState, dimensions, userId, userName, warningMessage]);
+  }, [gameState, modalState, dimensions, userId, userName, warningMessage, playerName, hasApron, isRestored]);
 
   const toolStatus = useMemo(() => {
     return REQUIRED_TOOL_IDS.map((id) => ({
@@ -737,6 +985,32 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
               className="mt-6 w-full rounded-lg border border-[#c8a24a] bg-[#1b2440] py-3 text-sm font-bold uppercase tracking-widest text-[#c8a24a] transition hover:bg-[#243255]"
             >
               Begin the Vigil
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showNameInput && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="w-full max-w-md rounded-xl border border-[#c8a24a]/50 bg-[#0b0f1a]/95 p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 h-14 w-14 rounded-full border border-[#1b2440] bg-[#121726] p-3">
+              <img src={generateSpriteUrl('inner_guard')} className="h-full w-full object-contain" alt="Inner Guard" />
+            </div>
+            <h3 className="mm-display text-lg text-[#c8a24a]">The Inner Guard Challenges You</h3>
+            <p className="mt-2 text-sm text-[#c0c7d1]">“Whom have you there?”</p>
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              className="mt-5 w-full rounded-md border border-[#1b2440] bg-black/40 px-4 py-2 text-white focus:border-[#c8a24a] focus:outline-none"
+            />
+            <button
+              onClick={handleNameSubmit}
+              disabled={!tempName.trim()}
+              className="mt-4 w-full rounded-lg border border-[#c8a24a] bg-[#1b2440] py-2 text-sm font-bold uppercase tracking-widest text-[#c8a24a] disabled:opacity-40"
+            >
+              Proceed
             </button>
           </div>
         </div>
@@ -820,6 +1094,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
                 />
               ))}
             </div>
+            <p className="mt-4 text-sm text-[#c0c7d1]">
+              You have fallen into the grave. The Master's help will raise you back to labor—answer the ritual question.
+            </p>
             <div className="mt-6 rounded-lg border border-[#1b2440] bg-black/40 p-4">
               <p className="text-sm uppercase tracking-[0.2em] text-[#c0c7d1]">Ritual Question</p>
               <p className="mt-2 text-lg text-white">{graveQuestion.text}</p>
@@ -907,7 +1184,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName }) => {
           <div className="w-full max-w-2xl rounded-2xl border border-[#c8a24a] bg-[#0b0f1a]/95 p-8 text-center text-[#c0c7d1]">
             <p className="mm-display text-xs uppercase tracking-[0.35em] text-[#c8a24a]">The Empty Chair</p>
             <h2 className="mt-3 text-3xl text-[#c8a24a]">Vigil Complete</h2>
-            <p className="mt-2 text-base">Brother {userName || 'Mason'}, you have kept the faith through the trial.</p>
+            <p className="mt-2 text-base">Brother {playerName || 'Mason'}, you have kept the faith through the trial.</p>
             <p className="mt-4 text-sm uppercase tracking-[0.25em] text-[#c0c7d1]">Final Score</p>
             <p className="mt-1 text-4xl text-[#c8a24a]">{score + 500}</p>
             <button

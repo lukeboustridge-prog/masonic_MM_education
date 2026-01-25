@@ -21,7 +21,7 @@ export const WORLD_HEIGHT = 1200;
 
 export const DESIGN_HEIGHT = 360;
 
-export const PLAYER_LIGHT_RADIUS = 120;
+export const PLAYER_LIGHT_RADIUS = 170;
 
 export const LIGHT_SOURCES: LightSource[] = [
   { x: 220, yOffset: -40, radius: 160, intensity: 0.6, color: TEMPLE_COLORS.GOLD },
@@ -41,6 +41,12 @@ export const CHECKPOINTS = [
   { x: 3200, yOffset: 0 },
   { x: 4200, yOffset: -140 }
 ];
+
+export const NPC_CONFIG = {
+  INNER_GUARD: { x: 160, yOffset: 0 },
+  SENIOR_WARDEN: { x: 320, yOffset: 0 },
+  WORSHIPFUL_MASTER: { x: 4800, yOffset: 0 }
+};
 
 export const PLATFORM_DATA: Array<{
   x: number;

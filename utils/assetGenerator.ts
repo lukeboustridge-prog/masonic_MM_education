@@ -56,9 +56,10 @@ export const generateSpriteUrl = (key: string): string => {
   if (spriteCache[key]) return spriteCache[key];
   if (typeof document === 'undefined') return '';
 
+  const resolvedKey = key === 'wm' ? 'worshipful_master' : key;
   let width = 32;
   let height = 32;
-  if (['player', 'jubela', 'jubelo', 'jubelum'].includes(key)) {
+  if (['player', 'jubela', 'jubelo', 'jubelum', 'inner_guard', 'senior_warden', 'worshipful_master'].includes(resolvedKey)) {
     width = 32;
     height = 48;
   }
@@ -80,10 +81,12 @@ export const generateSpriteUrl = (key: string): string => {
   const silver = '#c0c7d1';
   const gold = '#c8a24a';
   const blue = '#7dd3fc';
+  const blueDark = '#38bdf8';
   const suit = '#0f172a';
   const flesh = '#f5b997';
+  const white = '#f8fafc';
 
-  switch (key) {
+  switch (resolvedKey) {
     case 'player': {
       drawCircle(ctx, 16, 7, 6, flesh);
       fillRect(ctx, 10, 14, 12, 18, suit);
@@ -109,6 +112,114 @@ export const generateSpriteUrl = (key: string): string => {
     case 'jubelum':
       drawShadowFigure(ctx, 'maul');
       break;
+    case 'worshipful_master': {
+      drawCircle(ctx, 16, 6, 6, flesh);
+      fillRect(ctx, 10, 4, 3, 6, '#e2e8f0');
+      fillRect(ctx, 19, 4, 3, 6, '#e2e8f0');
+
+      fillRect(ctx, 8, 12, 16, 22, suit);
+      fillRect(ctx, 9, 34, 6, 12, suit);
+      fillRect(ctx, 17, 34, 6, 12, suit);
+      fillRect(ctx, 8, 46, 7, 2, '#000000');
+      fillRect(ctx, 17, 46, 7, 2, '#000000');
+
+      fillRect(ctx, 5, 13, 3, 16, suit);
+      fillRect(ctx, 24, 13, 3, 16, suit);
+      fillRect(ctx, 5, 29, 3, 3, flesh);
+      fillRect(ctx, 24, 29, 3, 3, flesh);
+
+      ctx.strokeStyle = blue;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(11, 14);
+      ctx.lineTo(16, 24);
+      ctx.lineTo(21, 14);
+      ctx.stroke();
+
+      ctx.strokeStyle = silver;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(13, 24, 6, 6);
+
+      fillRect(ctx, 9, 22, 14, 11, white);
+      ctx.strokeStyle = blue;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(9, 22, 14, 11);
+
+      fillRect(ctx, 10, 24, 2, 5, silver);
+      fillRect(ctx, 20, 24, 2, 5, silver);
+
+      fillRect(ctx, 10, 30, 3, 1, silver);
+      fillRect(ctx, 11, 29, 1, 2, silver);
+      fillRect(ctx, 19, 30, 3, 1, silver);
+      fillRect(ctx, 20, 29, 1, 2, silver);
+      fillRect(ctx, 14, 24, 3, 1, silver);
+      fillRect(ctx, 15, 23, 1, 2, silver);
+      break;
+    }
+    case 'inner_guard':
+    case 'senior_warden': {
+      drawCircle(ctx, 16, 6, 6, flesh);
+
+      ctx.fillStyle = resolvedKey === 'senior_warden' ? '#94a3b8' : '#78350f';
+      ctx.beginPath();
+      ctx.arc(16, 5, 6, Math.PI, 0);
+      ctx.fill();
+
+      fillRect(ctx, 8, 12, 16, 22, suit);
+      fillRect(ctx, 9, 34, 6, 12, suit);
+      fillRect(ctx, 17, 34, 6, 12, suit);
+      fillRect(ctx, 8, 46, 7, 2, '#000000');
+      fillRect(ctx, 17, 46, 7, 2, '#000000');
+
+      fillRect(ctx, 5, 13, 3, 16, suit);
+      fillRect(ctx, 24, 13, 3, 16, suit);
+      fillRect(ctx, 5, 29, 3, 3, flesh);
+      fillRect(ctx, 24, 29, 3, 3, flesh);
+
+      ctx.strokeStyle = blue;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(11, 14);
+      ctx.lineTo(16, 24);
+      ctx.lineTo(21, 14);
+      ctx.stroke();
+
+      ctx.strokeStyle = silver;
+      ctx.lineWidth = 1.5;
+      if (resolvedKey === 'inner_guard') {
+        ctx.beginPath();
+        ctx.moveTo(14, 24);
+        ctx.lineTo(18, 29);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(18, 24);
+        ctx.lineTo(14, 29);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(13, 28);
+        ctx.lineTo(19, 28);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(16, 28);
+        ctx.lineTo(16, 25);
+        ctx.stroke();
+      }
+
+      fillRect(ctx, 9, 22, 14, 11, white);
+      ctx.strokeStyle = blue;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(9, 22, 14, 11);
+
+      fillRect(ctx, 10, 24, 2, 5, silver);
+      fillRect(ctx, 20, 24, 2, 5, silver);
+
+      drawCircle(ctx, 11, 30, 2, blue);
+      drawCircle(ctx, 21, 30, 2, blue);
+      drawCircle(ctx, 11, 30, 1, blueDark);
+      drawCircle(ctx, 21, 30, 1, blueDark);
+      break;
+    }
     case 'skirret': {
       drawCircle(ctx, 16, 16, 6, gold);
       drawCircle(ctx, 16, 16, 3, silver);
