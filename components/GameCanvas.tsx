@@ -1112,6 +1112,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
                       if (answer === graveQuestion.correctAnswer) {
                         setGraveResult('correct');
                       } else {
+                        const name = playerName.trim() || 'Mason';
+                        submitLeaderboardScore(name, scoreRef.current, false, userId).catch(() => {});
                         setGraveResult('incorrect');
                       }
                     }}
