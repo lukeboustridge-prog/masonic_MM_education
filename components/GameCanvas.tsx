@@ -46,6 +46,7 @@ import {
   renderStarField,
   createSquashStretch,
   applyLandingSquash,
+  applyJumpStretch,
   updateSquashStretch,
   getHoverOffset,
   drawSpriteGlow,
@@ -119,6 +120,21 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     jumpCount: 0,
     coyoteTimer: 0
   });
+
+  // === SHARED RENDERING LIBRARY REFS (Early 2000s Graphics Refresh) ===
+  const particleSystemRef = useRef<ParticleSystem>(new ParticleSystem(100));
+  const screenShakeStateRef = useRef<ScreenShake>({
+    intensity: 0,
+    duration: 0,
+    elapsed: 0,
+    offsetX: 0,
+    offsetY: 0
+  });
+  const transitionManagerRef = useRef<TransitionManager>(new TransitionManager());
+  const scorePopupManagerRef = useRef<ScorePopupManager>(new ScorePopupManager());
+  const squashStretchRef = useRef(createSquashStretch());
+  const wasGroundedRef = useRef(false);
+  const prevVyRef = useRef(0);
 
   useEffect(() => {
     if (userName) {
@@ -431,6 +447,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
   const handleDeath = () => {
     if (gameState !== 'PLAYING') return;
+    // Add death flash effect
+    transitionManagerRef.current.flash(150, '#ff0000', 0.3);
     const question = pickGraveQuestion();
     setGraveQuestion(question);
     setGraveAnswers(shuffleAnswers(question.answers));
@@ -445,6 +463,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     collectedRef.current.add(orb.id);
     setCollectedIds(new Set(collectedRef.current));
     const points = orb.points ?? 100;
+    // Add collection burst particles and score popup
+    const groundRefY = DESIGN_HEIGHT - 40;
+    const orbY = orb.y || (groundRefY + ((orb as any).yOffset || 0));
+    createCollectionBurst(particleSystemRef.current, orb.x, orbY);
+    scorePopupManagerRef.current.addScore(orb.x, orbY - 30, points);
     setScore((prev) => {
       const next = prev + points;
       scoreRef.current = next;
@@ -516,6 +539,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
   const executeJump = () => {
     const p = playerRef.current;
     if (p.isGrounded || p.coyoteTimer > 0) {
+      // Create jump dust particles at player's feet
+      createJumpDust(
+        particleSystemRef.current,
+        p.x + p.width / 2,
+        p.y + p.height
+      );
       p.vy = JUMP_FORCE;
       p.isGrounded = false;
       p.jumpCount = 1;
@@ -639,6 +668,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
             x: cp.x,
             y: groundRefY + cp.yOffset - player.height - 8
           };
+          // Add checkpoint celebration particles and flash
+          createCheckpointEffect(
+            particleSystemRef.current,
+            player.x + player.width / 2,
+            player.y + player.height / 2
+          );
+          transitionManagerRef.current.flash(200, '#fbbf24', 0.2);
         }
       }
 
@@ -690,6 +726,35 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
       if (player.isGrounded) player.coyoteTimer = 6;
       else if (player.coyoteTimer > 0) player.coyoteTimer -= 1;
+
+      // === LANDING DETECTION FOR PARTICLES AND SQUASH/STRETCH ===
+      const justLanded = player.isGrounded && !wasGroundedRef.current && prevVyRef.current > 2;
+      if (justLanded) {
+        const landingImpact = Math.min(prevVyRef.current / 15, 1);
+        // Create landing dust particles
+        createLandingDust(
+          particleSystemRef.current,
+          player.x + player.width / 2,
+          player.y + player.height,
+          landingImpact
+        );
+        // Apply squash effect based on landing impact
+        applyLandingSquash(squashStretchRef.current, landingImpact);
+      }
+      wasGroundedRef.current = player.isGrounded;
+      prevVyRef.current = player.vy;
+
+      // Update squash/stretch animation
+      updateSquashStretch(squashStretchRef.current);
+
+      // Update particle system
+      particleSystemRef.current.update(16.67);
+
+      // Update transition manager
+      transitionManagerRef.current.update();
+
+      // Update score popups
+      scorePopupManagerRef.current.update();
 
       if (player.isGrounded && jumpBufferRef.current > 0) {
         executeJump();
@@ -950,6 +1015,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
       ctx.restore();
 
+      // Add torch smoke effects near light sources
+      LIGHT_SOURCES.forEach((light) => {
+        if (light.x > cameraRef.current.x - 50 && light.x < cameraRef.current.x + viewW + 50) {
+          drawTorchSmoke(ctx, light.x, groundRefY + light.yOffset - 20, frameTime);
+        }
+      });
+
       const playerAuraX = player.x + player.width / 2;
       const playerAuraY = player.y + player.height / 2;
       ctx.save();
@@ -963,9 +1035,22 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
       ctx.fill();
       ctx.restore();
 
+      // Render particles (dust, sparkles, etc.)
+      particleSystemRef.current.render(ctx, cameraRef.current.x, cameraRef.current.y, viewW, viewH);
+
+      // Render score popups
+      scorePopupManagerRef.current.render(ctx, cameraRef.current.x, cameraRef.current.y);
+
       drawPlayerSprite(ctx, player, hasApron, isRestored);
 
       ctx.restore();
+
+      // Enhanced vignette from shared library
+      ctx.resetTransform();
+      drawVignette(ctx, w, h, 0.5);
+
+      // Render screen transitions (fade, flash effects)
+      transitionManagerRef.current.render(ctx, w, h);
 
       frameId = requestAnimationFrame(loop);
     };
