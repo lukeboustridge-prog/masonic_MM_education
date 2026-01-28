@@ -52,11 +52,25 @@ const drawShadowFigure = (ctx: CanvasRenderingContext2D, tool: 'plumb' | 'level'
   }
 };
 
+// Officer sprites that should use actual image files from /public/sprites/
+const OFFICER_SPRITE_FILES: Record<string, string> = {
+  inner_guard: '/sprites/inner_guard.png',
+  senior_warden: '/sprites/officer.png',
+  worshipful_master: '/sprites/wm.png',
+};
+
 export const generateSpriteUrl = (key: string): string => {
   if (spriteCache[key]) return spriteCache[key];
   if (typeof document === 'undefined') return '';
 
   const resolvedKey = key === 'wm' ? 'worshipful_master' : key;
+
+  // Use actual image files for officer sprites
+  if (OFFICER_SPRITE_FILES[resolvedKey]) {
+    const url = OFFICER_SPRITE_FILES[resolvedKey];
+    spriteCache[key] = url;
+    return url;
+  }
   let width = 32;
   let height = 32;
   if (['player', 'jubela', 'jubelo', 'jubelum', 'inner_guard', 'senior_warden', 'worshipful_master'].includes(resolvedKey)) {
