@@ -974,7 +974,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
       const drawNpc = (key: string, x: number, y: number) => {
         const img = spritesRef.current[key];
-        if (img && img.complete) {
+        if (img && img.complete && img.naturalHeight !== 0) {
           ctx.drawImage(img, x - 16, y - 44, 32, 44);
         } else {
           ctx.fillStyle = '#11131a';
