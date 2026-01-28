@@ -373,12 +373,19 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     }
 
     if (showApron && restored) {
+      // NZ Master Mason Apron - white with Cambridge blue border
+      const apronBlue = '#2dd4bf'; // Cambridge blue/turquoise
+
+      // Apron body (white)
       ctx.fillStyle = '#f8fafc';
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 1;
       ctx.fillRect(-7, 0, 14, 10);
+
+      // Blue border
+      ctx.strokeStyle = apronBlue;
+      ctx.lineWidth = 1.5;
       ctx.strokeRect(-7, 0, 14, 10);
 
+      // Flap (triangular)
       ctx.beginPath();
       ctx.moveTo(-7, 0);
       ctx.lineTo(7, 0);
@@ -386,9 +393,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
       ctx.closePath();
       ctx.fillStyle = '#f8fafc';
       ctx.fill();
+      ctx.strokeStyle = apronBlue;
       ctx.stroke();
 
-      ctx.fillStyle = '#7dd3fc';
+      // Blue rosettes (3 rosettes for MM)
+      ctx.fillStyle = apronBlue;
       ctx.beginPath();
       ctx.arc(-4, 7, 1.6, 0, Math.PI * 2);
       ctx.fill();
