@@ -1,0 +1,25 @@
+{
+  "name": "@freemasons/shared",
+  "version": "1.0.0",
+  "description": "Shared rendering library for Masonic Educational Games",
+  "type": "module",
+  "main": "./rendering/index.ts",
+  "types": "./rendering/index.ts",
+  "exports": {
+    ".": "./rendering/index.ts",
+    "./rendering": "./rendering/index.ts",
+    "./rendering/*": "./rendering/*"
+  },
+  "files": [
+    "rendering/**/*"
+  ],
+  "keywords": [
+    "canvas",
+    "rendering",
+    "2d",
+    "graphics",
+    "particles",
+    "lighting"
+  ],
+  "license": "MIT"
+}
