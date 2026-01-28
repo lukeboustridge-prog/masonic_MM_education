@@ -374,16 +374,21 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     }
 
     if (showApron && restored) {
-      // NZ Masonic Apron - white with Cambridge blue border
+      // NZ Masonic Apron
       const apronBlue = '#2dd4bf'; // Cambridge blue/turquoise
 
       // Apron body (white)
       ctx.fillStyle = '#f8fafc';
       ctx.fillRect(-7, 0, 14, 10);
 
-      // Blue border
-      ctx.strokeStyle = apronBlue;
-      ctx.lineWidth = 1.5;
+      // Border - MM has blue border, FC has plain silver edge
+      if (masterMason) {
+        ctx.strokeStyle = apronBlue;
+        ctx.lineWidth = 1.5;
+      } else {
+        ctx.strokeStyle = '#cbd5e1'; // Silver/grey for FC
+        ctx.lineWidth = 1;
+      }
       ctx.strokeRect(-7, 0, 14, 10);
 
       // Flap (triangular)
@@ -394,10 +399,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
       ctx.closePath();
       ctx.fillStyle = '#f8fafc';
       ctx.fill();
-      ctx.strokeStyle = apronBlue;
       ctx.stroke();
 
-      // Blue rosettes - FC has 2, MM has 3
+      // Rosettes - FC has 2 (blue), MM has 3 (blue)
       ctx.fillStyle = apronBlue;
       // Bottom left rosette (both FC and MM)
       ctx.beginPath();
