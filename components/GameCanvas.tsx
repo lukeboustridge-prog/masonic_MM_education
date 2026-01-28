@@ -94,8 +94,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
   const [playerName, setPlayerName] = useState(userName ?? '');
   const [showNameInput, setShowNameInput] = useState(false);
   const [tempName, setTempName] = useState(userName ?? '');
-  const [hasApron, setHasApron] = useState(false);
-  const [isRestored, setIsRestored] = useState(false);
+  const [hasApron, setHasApron] = useState(true);  // FC starts with apron
+  const [isRestored, setIsRestored] = useState(true);  // FC is not blindfolded
+  const [isMasterMason, setIsMasterMason] = useState(false);  // Tracks MM degree completion
 
   const scoreRef = useRef(0);
   const collectedRef = useRef<Set<number>>(new Set());
@@ -225,7 +226,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     return selection;
   };
 
-  const drawPlayerSprite = (ctx: CanvasRenderingContext2D, p: Player, showApron: boolean, restored: boolean) => {
+  const drawPlayerSprite = (ctx: CanvasRenderingContext2D, p: Player, showApron: boolean, restored: boolean, masterMason: boolean) => {
     ctx.save();
     ctx.translate(p.x + p.width / 2, p.y + p.height / 2);
     ctx.scale(p.facing, 1);
@@ -373,7 +374,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     }
 
     if (showApron && restored) {
-      // NZ Master Mason Apron - white with Cambridge blue border
+      // NZ Masonic Apron - white with Cambridge blue border
       const apronBlue = '#2dd4bf'; // Cambridge blue/turquoise
 
       // Apron body (white)
@@ -396,17 +397,22 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
       ctx.strokeStyle = apronBlue;
       ctx.stroke();
 
-      // Blue rosettes (3 rosettes for MM)
+      // Blue rosettes - FC has 2, MM has 3
       ctx.fillStyle = apronBlue;
+      // Bottom left rosette (both FC and MM)
       ctx.beginPath();
       ctx.arc(-4, 7, 1.6, 0, Math.PI * 2);
       ctx.fill();
+      // Bottom right rosette (both FC and MM)
       ctx.beginPath();
       ctx.arc(4, 7, 1.6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, 2, 1.4, 0, Math.PI * 2);
-      ctx.fill();
+      // Center/flap rosette (MM only - 3rd rosette)
+      if (masterMason) {
+        ctx.beginPath();
+        ctx.arc(0, 2, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     ctx.restore();
@@ -440,8 +446,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     setGraveResult(null);
     setWarningMessage(null);
     setModalState('NONE');
-    setHasApron(false);
-    setIsRestored(false);
+    setHasApron(true);  // FC starts with apron
+    setIsRestored(true);  // FC is not blindfolded
+    setIsMasterMason(false);  // Reset MM status
     setShowNameInput(false);
     setGameState(toMenu ? 'START' : 'PLAYING');
   };
@@ -494,8 +501,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     }
 
     if (activeOrb.id === 999) {
-      setHasApron(true);
-      setIsRestored(true);
+      setIsMasterMason(true);  // Raised to Master Mason
       setActiveOrb(null);
       setModalState('NONE');
       return;
@@ -784,11 +790,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
           player.vx = 0;
           keysRef.current = {};
 
-          let response = `Whom have you there? Brother ${resolvedRank} ${resolvedName}, who was initiated on ${resolvedInitiationDate}. The Senior Warden awaits to invest you with the badge of a Master Mason.`;
+          let response = `Whom have you there? Brother ${resolvedRank} ${resolvedName}, a Fellow Craft who seeks to be raised to the sublime degree of a Master Mason. The Senior Warden awaits to invest you.`;
           if (resolvedIsGrandOfficer === true) {
-            response = `Whom have you there? A Grand Lodge Officer! I am honoured to admit you, ${resolvedName}. The Senior Warden awaits to invest you.`;
+            response = `Whom have you there? A Grand Lodge Officer! I am honoured to admit you, ${resolvedName}. The Senior Warden awaits to raise you to the sublime degree.`;
           } else if (resolvedIsGrandOfficer === false) {
-            response = 'Whom have you there? You seek advancement in Freemasonry. The Senior Warden awaits to invest you with the badge of a Master Mason.';
+            response = 'Whom have you there? A Fellow Craft who seeks to be raised to the sublime degree of a Master Mason. The Senior Warden awaits to invest you.';
           }
 
           const innerGuardOrbMock: Orb = {
@@ -817,7 +823,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
       const swX = NPC_CONFIG.SENIOR_WARDEN.x;
       const swY = groundRefY + NPC_CONFIG.SENIOR_WARDEN.yOffset;
-      if (!hasApron && innerGuardGreetedRef.current) {
+      if (!isMasterMason && innerGuardGreetedRef.current) {
         if (player.x > swX - 30) {
           player.x = swX - 30;
           player.vx = 0;
@@ -831,7 +837,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
             active: true,
             name: 'Senior Warden',
             spriteKey: 'senior_warden',
-            blurb: 'Brother, I invest you with the badge of a Master Mason. Wear it with honour and constancy, that it may adorn a life of fidelity.'
+            blurb: 'Brother, you have now been raised to the sublime degree of a Master Mason. I invest you with this badge, distinguished by three rosettes. Wear it as a symbol of your fidelity and the honour bestowed upon you.'
           };
 
           setActiveOrb(swOrbMock);
@@ -1050,7 +1056,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
       // Render score popups
       scorePopupManagerRef.current.render(ctx, cameraRef.current.x, cameraRef.current.y);
 
-      drawPlayerSprite(ctx, player, hasApron, isRestored);
+      drawPlayerSprite(ctx, player, hasApron, isRestored, isMasterMason);
 
       ctx.restore();
 
@@ -1069,7 +1075,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [gameState, modalState, dimensions, userId, userName, warningMessage, playerName, hasApron, isRestored]);
+  }, [gameState, modalState, dimensions, userId, userName, warningMessage, playerName, hasApron, isRestored, isMasterMason]);
 
   const toolStatus = useMemo(() => {
     return REQUIRED_TOOL_IDS.map((id) => ({
