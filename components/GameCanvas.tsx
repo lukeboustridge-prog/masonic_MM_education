@@ -25,6 +25,39 @@ import QuizModal from './QuizModal';
 import LoreModal from './LoreModal';
 import { submitScore as submitLeaderboardScore } from '../api/leaderboard';
 
+// Import shared rendering library (Early 2000s Graphics Refresh)
+import {
+  setSmoothing,
+  drawDropShadow,
+  drawDynamicShadow,
+  drawBloom,
+  drawCollectibleGlow,
+  drawVignette,
+  createScreenShake,
+  updateScreenShake,
+  ParticleSystem,
+  createLandingDust,
+  createJumpDust,
+  createCollectionBurst,
+  createCheckpointEffect,
+  applyEnhancedLighting,
+  drawTorchSmoke,
+  generateStarField,
+  renderStarField,
+  createSquashStretch,
+  applyLandingSquash,
+  updateSquashStretch,
+  getHoverOffset,
+  drawSpriteGlow,
+  drawGlintEffect,
+  TransitionManager,
+  ScorePopupManager,
+  ENHANCED_COLORS,
+  withAlpha,
+  type ScreenShake,
+  type StarField,
+} from '@shared/rendering';
+
 type GameCanvasProps = {
   userId?: string | null;
   userName?: string | null;
