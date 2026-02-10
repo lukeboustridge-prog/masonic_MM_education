@@ -67,7 +67,7 @@ const QuizModal: React.FC<QuizModalProps> = ({ question, onCorrect, onIncorrect 
 
   return (
     // 1. Overlay: Fixed centering
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 md:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 md:p-4">
       <div
         // 2. Container Configuration
         className={`
@@ -77,8 +77,8 @@ const QuizModal: React.FC<QuizModalProps> = ({ question, onCorrect, onIncorrect 
           landscape:w-[95%] landscape:max-w-4xl landscape:max-h-[95vh]
           p-4 md:p-10 landscape:p-4
           overflow-y-auto
-          rounded-xl shadow-2xl border-4 md:border-8 transition-colors duration-200
-          ${flashError ? 'bg-red-950 border-red-500' : showSuccess ? 'bg-slate-900 border-green-500' : 'bg-slate-900 border-blue-500'}
+          rounded-xl shadow-2xl shadow-[0_0_15px_rgba(255,215,0,0.3)] border-4 md:border-8 transition-colors duration-200
+          ${flashError ? 'bg-red-950 border-red-500' : showSuccess ? 'bg-slate-900 border-green-500' : 'bg-slate-900 border-amber-500'}
         `}
       >
         {showSuccess ? (
@@ -148,8 +148,8 @@ const QuizModal: React.FC<QuizModalProps> = ({ question, onCorrect, onIncorrect 
                     group relative w-full
                     py-3 md:py-5 landscape:py-3
                     px-3 md:px-6 landscape:px-3
-                    rounded-lg bg-slate-800 hover:bg-blue-600
-                    border-2 md:border-4 border-slate-700 hover:border-blue-300
+                    rounded-lg bg-slate-800 hover:bg-amber-700/60
+                    border-2 md:border-4 border-slate-700 hover:border-amber-400
                     transition-all active:scale-95 hover:scale-[1.02]
                     flex items-center landscape:flex-col landscape:justify-center landscape:text-center
                   "
@@ -159,11 +159,11 @@ const QuizModal: React.FC<QuizModalProps> = ({ question, onCorrect, onIncorrect 
                     flex-shrink-0
                     w-8 h-8 md:w-12 md:h-12 landscape:w-8 landscape:h-8
                     flex items-center justify-center rounded-full
-                    bg-blue-600 group-hover:bg-blue-500
+                    bg-amber-600 group-hover:bg-amber-500
                     text-white
                     font-black text-sm md:text-xl landscape:text-sm
                     mr-3 md:mr-4 landscape:mr-0 landscape:mb-2
-                    border md:border-2 border-blue-500 group-hover:border-blue-300
+                    border md:border-2 border-amber-500 group-hover:border-amber-300
                     transition-colors shadow-lg
                   ">
                     {String.fromCharCode(65 + index)}

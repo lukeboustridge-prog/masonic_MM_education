@@ -8,6 +8,23 @@
     <meta name="theme-color" content="#0b0f1a" />
     <title>Masonic MM Education</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            animation: {
+              shimmer: 'shimmer 2s linear infinite',
+            },
+            keyframes: {
+              shimmer: {
+                '0%': { backgroundPosition: '-200% 0' },
+                '100%': { backgroundPosition: '200% 0' },
+              },
+            },
+          },
+        },
+      }
+    </script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap');
       :root {

@@ -30,12 +30,13 @@ const LoreModal: React.FC<LoreModalProps> = ({ orb, onNext, speaker, isIntro = f
         // Landscape: Use row layout and wider max-width
         className="
             relative w-[95%] max-w-lg landscape:max-w-2xl
-            flex flex-col landscape:flex-row 
+            flex flex-col landscape:flex-row
             items-center landscape:items-stretch
             gap-4
             p-4 md:p-6 rounded-xl shadow-2xl border-2 md:border-4 border-amber-500 bg-slate-900
             max-h-[90vh] landscape:h-auto
             transition-all duration-200
+            animate-in slide-in-from-bottom-4 duration-300
         "
       >
         {/* SECTION 1: Visuals (Top in Portrait, Left in Landscape) */}
@@ -47,9 +48,13 @@ const LoreModal: React.FC<LoreModalProps> = ({ orb, onNext, speaker, isIntro = f
                 </p>
               )}
               <h2 className="text-lg md:text-2xl landscape:text-base font-bold text-amber-400 text-center leading-none mb-2">{orb.name}</h2>
-              <div className="h-1 landscape:h-0.5 w-16 bg-amber-600 rounded-full mb-3 landscape:mb-4"></div>
+              <div className="flex items-center gap-2 mb-3 landscape:mb-4">
+                <span className="h-px w-6 bg-amber-600/60"></span>
+                <span className="w-1.5 h-1.5 rotate-45 bg-amber-500"></span>
+                <span className="h-px w-6 bg-amber-600/60"></span>
+              </div>
               
-              <div className="p-3 bg-slate-800 rounded-full border-2 border-slate-700 shadow-inner">
+              <div className="p-3 bg-slate-800 rounded-full border-2 border-amber-500/50 shadow-[0_0_12px_rgba(255,215,0,0.3)]">
                  <img 
                    src={spriteUrl} 
                    alt={orb.name}

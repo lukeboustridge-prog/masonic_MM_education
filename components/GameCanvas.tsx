@@ -1106,20 +1106,22 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
       {gameState === 'START' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="mm-fade-in w-[92%] max-w-xl rounded-2xl border border-[#c8a24a]/50 bg-[#0b0f1a]/90 p-6 text-center shadow-2xl">
-            <p className="text-sm uppercase tracking-[0.3em] text-[#c0c7d1]">Memento Mori</p>
-            <h1 className="mm-display mm-glow mt-2 text-3xl md:text-4xl text-[#c8a24a]">Master Mason Education</h1>
-            <p className="mt-4 text-base text-[#c0c7d1]">
+          <div className="mm-fade-in w-[92%] max-w-xl rounded-2xl border border-amber-500 bg-slate-900/95 p-6 text-center shadow-2xl">
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Memento Mori</p>
+            <h1 className="mm-display mm-glow mt-2 text-3xl md:text-4xl">
+              <span className="bg-gradient-to-r from-amber-400 via-white to-amber-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-shimmer">Master Mason Education</span>
+            </h1>
+            <p className="mt-4 text-base text-slate-300">
               Darkness visible. Keep your integrity alight, face the ruffians, and accept the final lesson.
             </p>
-            <div className="mt-6 flex flex-col gap-3 text-sm text-[#c0c7d1]">
+            <div className="mt-6 flex flex-col gap-3 text-sm text-slate-300">
               <p>Move: Arrow Keys or A/D</p>
               <p>Jump: Space or W</p>
               <p>Pause: Escape</p>
             </div>
             <button
               onClick={() => resetGame(false)}
-              className="mt-6 w-full rounded-lg border border-[#c8a24a] bg-[#1b2440] py-3 text-sm font-bold uppercase tracking-widest text-[#c8a24a] transition hover:bg-[#243255]"
+              className="mt-6 w-full rounded-lg border border-amber-500 bg-slate-800 py-3 text-sm font-bold uppercase tracking-widest text-amber-400 transition hover:bg-slate-700"
             >
               Begin the Vigil
             </button>
@@ -1320,15 +1322,17 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
       {gameState === 'VICTORY' && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-[#c8a24a] bg-[#0b0f1a]/95 p-8 text-center text-[#c0c7d1]">
-            <p className="mm-display text-xs uppercase tracking-[0.35em] text-[#c8a24a]">The Empty Chair</p>
-            <h2 className="mt-3 text-3xl text-[#c8a24a]">Vigil Complete</h2>
+          <div className="w-full max-w-2xl rounded-2xl border border-amber-500 bg-slate-900/95 p-8 text-center text-slate-300 shadow-[0_0_20px_rgba(255,215,0,0.4)]">
+            <p className="mm-display text-xs uppercase tracking-[0.35em] text-amber-400">The Empty Chair</p>
+            <h2 className="mt-3 text-3xl text-amber-400">Vigil Complete</h2>
             <p className="mt-2 text-base">Brother {playerName || 'Mason'}, you have kept the faith through the trial.</p>
-            <p className="mt-4 text-sm uppercase tracking-[0.25em] text-[#c0c7d1]">Final Score</p>
-            <p className="mt-1 text-4xl text-[#c8a24a]">{score + 500}</p>
+            <div className="mt-4 bg-slate-800/80 p-4 rounded-lg border border-amber-500/30 shadow-[0_0_12px_rgba(255,215,0,0.15)]">
+              <p className="text-sm uppercase tracking-[0.25em] text-slate-300">Final Score</p>
+              <p className="mt-1 text-4xl text-amber-400">{score + 500}</p>
+            </div>
             <button
               onClick={() => resetGame(true)}
-              className="mt-6 w-full rounded-lg border border-[#c8a24a] bg-[#1b2440] py-3 text-sm uppercase tracking-widest text-[#c8a24a]"
+              className="mt-6 w-full rounded-lg border border-amber-500 bg-slate-800 py-3 text-sm uppercase tracking-widest text-amber-400 transition hover:bg-slate-700"
             >
               Return to Menu
             </button>
