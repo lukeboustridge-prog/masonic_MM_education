@@ -6,7 +6,7 @@ function App() {
   const user = useUser();
 
   return (
-    <div className="w-screen h-screen overflow-hidden text-white selection:bg-[#c8a24a] selection:text-black">
+    <div className="w-full h-full overflow-hidden text-white selection:bg-[#c8a24a] selection:text-black">
       <GameCanvas
         userId={user.userId}
         userName={user.name}

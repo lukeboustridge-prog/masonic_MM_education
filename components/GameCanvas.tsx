@@ -76,10 +76,15 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
   const isGrandOfficerRef = useRef<boolean | null>(isGrandOfficer ?? null);
   const innerGuardGreetedRef = useRef(false);
 
-  const [dimensions, setDimensions] = useState({
-    w: typeof window !== 'undefined' ? (window.innerWidth || 800) : 800,
-    h: typeof window !== 'undefined' ? (window.innerHeight || 600) : 600
-  });
+  const getViewportSize = () => {
+    if (typeof window === 'undefined') return { w: 800, h: 600 };
+    const vv = window.visualViewport;
+    return {
+      w: (vv?.width ?? window.innerWidth) || 800,
+      h: (vv?.height ?? window.innerHeight) || 600,
+    };
+  };
+  const [dimensions, setDimensions] = useState(getViewportSize);
 
   const [gameState, setGameState] = useState<GameState>('START');
   const [modalState, setModalState] = useState<'NONE' | 'LORE' | 'QUIZ'>('NONE');
@@ -165,14 +170,17 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
 
   useEffect(() => {
     const handleResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const { w, h } = getViewportSize();
       if (w > 0 && h > 0) setDimensions({ w, h });
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -1179,7 +1187,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ userId, userName, rank, initiat
       )}
 
       {gameState === 'PLAYING' && modalState === 'NONE' && (
-        <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-end pb-4 px-4">
+        <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-end px-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <div className="flex justify-between items-end w-full select-none">
             <div className="flex gap-3 pointer-events-auto">
               <button
